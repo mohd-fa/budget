@@ -1,34 +1,50 @@
+import 'package:budget/widgets/chart.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import './models/transaction.dart';
 import './widgets/newtransaction.dart';
 import './widgets/list_transactions.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        theme: ThemeData(primarySwatch: Colors.green), home: Home());
+        theme: ThemeData(primarySwatch: Colors.green), home: const Home());
   }
 }
 
 class Home extends StatefulWidget {
+  const Home({Key? key}) : super(key: key);
+
   @override
   State<Home> createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
-  final List<Transactions> transactions = [];
+  final List<Transactions> _transactions = [];
+  List<Transactions> get _recentTransactions {
+    return _transactions.where((tx) {
+      return tx.date.isAfter(DateTime.now().subtract(const Duration(days: 7)));
+    }).toList();
+  }
+
   void _addTransaction(String title, double amount, DateTime date) {
     setState(() {
-      transactions.add(Transactions(
+      _transactions.add(Transactions(
           transactionId: DateTime.now().toString(),
           transactionName: title,
           amount: amount,
           date: date));
+    });
+  }
+
+  void _dltTransaction(String dltId) {
+    setState(() {
+      _transactions.removeWhere((element) => element.transactionId == dltId);
     });
   }
 
@@ -44,23 +60,22 @@ class _HomeState extends State<Home> {
           actions: [
             IconButton(
                 onPressed: () => startAddNewTransactions(context),
-                icon: Icon(Icons.add))
+                icon: const Icon(Icons.add))
           ],
-          title: Text('Budget'),
+          title: const Text('Budget'),
         ),
-        body: Column(
-          children: [
-            Container(
-              child: Card(child: Text('Chart')),
-              width: double.infinity,
-            ),
-            ListTransactions(transactions)
-          ],
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              Chart(_recentTransactions),
+              ListTransactions(_transactions, _dltTransaction)
+            ],
+          ),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: FloatingActionButton(
           onPressed: () => startAddNewTransactions(context),
-          child: Icon(Icons.add),
+          child: const Icon(Icons.add),
         ));
   }
 }

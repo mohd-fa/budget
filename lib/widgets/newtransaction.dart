@@ -3,62 +3,72 @@ import 'package:intl/intl.dart';
 
 class NewTansaction extends StatefulWidget {
   final Function addTx;
-
-  NewTansaction(this.addTx, {Key? key}) : super(key: key);
+  const NewTansaction(this.addTx, {Key? key}) : super(key: key);
 
   @override
   State<NewTansaction> createState() => _NewTansactionState();
 }
 
 class _NewTansactionState extends State<NewTansaction> {
-  final titleController = TextEditingController();
-  final dateController = TextEditingController();
-  late DateTime dateTimeVal;
-  final amountController = TextEditingController();
+  final _titleController = TextEditingController();
+  DateTime? _dateTimeVal;
+  final _amountController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      // height: 300,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          TextField(
-            decoration: InputDecoration(labelText: 'Title'),
-            controller: titleController,
-          ),
-          TextField(
-            decoration: InputDecoration(labelText: 'Amount'),
-            controller: amountController,
-            keyboardType: TextInputType.number,
-          ),
-          TextField(
-            decoration: InputDecoration(labelText: 'Date'),
-            readOnly: true,
-            onTap: () async {
-              dateTimeVal = await showDatePicker(
-                  context: context,
-                  firstDate: DateTime(2000),
-                  initialDate: DateTime.now(),
-                  lastDate: DateTime(2100)) as DateTime;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        TextField(
+          decoration: const InputDecoration(labelText: 'Title'),
+          controller: _titleController,
+        ),
+        TextField(
+          decoration: const InputDecoration(labelText: 'Amount'),
+          controller: _amountController,
+          keyboardType: TextInputType.number,
+        ),
+        Row(
+          children: [
+            Expanded(
+                child: _dateTimeVal == null
+                    ? const Text('No date selected')
+                    : Text(
+                        'Picked Date: ${DateFormat('dd-MM-yyyy').format(_dateTimeVal as DateTime)}')),
+            TextButton(
+                onPressed: () => showDatePicker(
+                            context: context,
+                            firstDate: DateTime(2000),
+                            initialDate: DateTime.now(),
+                            lastDate: DateTime.now())
+                        .then((value) {
+                      if (value == null) return;
+                      setState(() {
+                        _dateTimeVal = value;
+                      });
+                    }),
+                child: const Text(
+                  'Select Date',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ))
+          ],
+        ),
+        TextButton(
+            onPressed: () {
+              final enteredText = _titleController.text;
+              final enteredAmount = double.parse(_amountController.text);
 
-              setState(() {
-                dateController.text =
-                    DateFormat('dd-MM-yyyy').format(dateTimeVal);
-              });
+              if (enteredAmount <= 0 ||
+                  enteredText.isEmpty ||
+                  _dateTimeVal == null) return;
+
+              widget.addTx(_titleController.text,
+                  double.parse(_amountController.text), _dateTimeVal);
+
+              Navigator.of(context).pop();
             },
-            controller: dateController,
-          ),
-          // DatePickerDialog(
-          //     initialDate: DateTime.now(),
-          //     firstDate: DateTime(2000),
-          //     lastDate: DateTime(2100)),
-          TextButton(
-              onPressed: () => widget.addTx(titleController.text,
-                  double.parse(amountController.text), dateTimeVal),
-              child: Text('Add Transaction')),
-        ],
-      ),
+            child: const Text('Add Transaction')),
+      ],
     );
   }
 }
